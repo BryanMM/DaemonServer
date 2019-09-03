@@ -1,11 +1,6 @@
 /*
- * WebServer.c
- *
- *  Created on: Nov 3, 2012
- *      Author: pavithra
- *
- * A web server in C language using only the standard libraries.
- * The port number is passed as an argument.
+ *Based of a server retrieved from: https://dzone.com/articles/web-server-c
+ * On: 30/8/19
  *
  */
 
