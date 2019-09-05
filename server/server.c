@@ -10,6 +10,9 @@
 #include <string.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <arpa/inet.h>
+#include <sys/ioctl.h>
+#include <fstream>
 #include <netinet/in.h>
 #include <fcntl.h>
 #include <errno.h>
@@ -56,7 +59,7 @@ Function to recieve an image
 */
 int receive_image(int socket)
 {
-  buffersize = 0, recv_size = 0, size = 0, read_size, write_size, packet_index = 1, stat;
+  int buffersize = 0, recv_size = 0, size = 0, read_size, write_size, packet_index = 1, stat;
 
   char imagearray[10241], verify = '1';
   FILE *image;
