@@ -6,7 +6,10 @@
                 "${workspaceFolder}/**",
                 "/usr/include/c++/7",
                 "/usr/include/c++/7.4.0",
-                "/usr/include/x86_64-linux-gnu/c++/7"
+                "/usr/include/x86_64-linux-gnu/c++/7",
+                "/usr/include/ImageMagick-6/wand",
+                "/usr/include/ImageMagick-6",
+                "/usr/include/x86_64-linux-gnu/ImageMagick-6"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",

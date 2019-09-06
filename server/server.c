@@ -14,6 +14,7 @@
 #include <sys/ioctl.h>
 #include <netinet/in.h>
 #include <sys/select.h>
+#include <wand/MagickWand.h>
 #include <fcntl.h>
 #include <errno.h>
 
@@ -42,7 +43,25 @@ void error(const char *msg)
   perror(msg);
   exit(1);
 }
-
+/*
+  Function that applies the histogram equalization to the received image
+*/
+MagickWandGenesis();
+      MagickWand *wand = NULL;
+      wand = NewMagickWand();
+      MagickReadImage(wand,ifile);
+      MagickEqualizeImage(wand);
+      MagickQuantizeImage(
+                        wand,            // MagickWand
+                        number_colors,   // Target number colors
+                        RGBColorspace,  // Colorspace
+                        treedepth,       // Optimal depth
+                        MagickTrue,      // Dither
+                        MagickFalse      // Quantization error
+                    );
+      MagickWriteImage(wand,"out.jpeg");
+      if(wand)wand = DestroyMagickWand(wand);
+      MagickWandTerminus();
 /*
 Function to recieve an image
 */
@@ -51,7 +70,7 @@ int receive_image(int socket)
   int fd = 0, confd = 0, b, tot;
   struct sockaddr_in serv_addr;
 
-  char buff[5189];
+  char buff[1025];
   int num;
   int buffersize = 0, recv_size = 0, size = 0, read_size, write_size, packet_index = 1, stat;
 
@@ -82,12 +101,18 @@ int receive_image(int socket)
 
   FILE *fp = fopen("provacopy.png", "wb");
   tot = 0;
+  char *httpresponse;
   if (fp != NULL)
   {
     while ((b = recv(socket, buff, 1024, 0)) > 0)
-    {
-      tot += b;
-      fwrite(buff, 1, b, fp);
+    { 
+      httpresponse = strstr(b,"\r\n\r\n");
+      if(httpresponse)
+      {
+        httpresponse +=4;
+        tot += b;
+        fwrite(buff, 1, b, fp);
+      }
     }
 
     printf("Received byte: %d\n", tot);
@@ -100,6 +125,7 @@ int receive_image(int socket)
   {
     perror("File");
   }
+  printf("Done receiving the file\n");
   close(socket);
 }
 
