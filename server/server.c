@@ -12,8 +12,8 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <sys/ioctl.h>
-#include <fstream>
 #include <netinet/in.h>
+#include <sys/select.h>
 #include <fcntl.h>
 #include <errno.h>
 
@@ -29,20 +29,9 @@ typedef struct
 //Possible media types
 extn extensions[] = {
     {"gif", "image/gif"},
-    {"txt", "text/plain"},
     {"jpg", "image/jpg"},
     {"jpeg", "image/jpeg"},
     {"png", "image/png"},
-    {"ico", "image/ico"},
-    {"zip", "image/zip"},
-    {"gz", "image/gz"},
-    {"tar", "image/tar"},
-    {"htm", "text/html"},
-    {"html", "text/html"},
-    {"php", "text/html"},
-    {"pdf", "application/pdf"},
-    {"zip", "application/octet-stream"},
-    {"rar", "application/octet-stream"},
     {0, 0}};
 
 /*
@@ -59,6 +48,11 @@ Function to recieve an image
 */
 int receive_image(int socket)
 {
+  int fd = 0, confd = 0, b, tot;
+  struct sockaddr_in serv_addr;
+
+  char buff[5189];
+  int num;
   int buffersize = 0, recv_size = 0, size = 0, read_size, write_size, packet_index = 1, stat;
 
   char imagearray[10241], verify = '1';
@@ -86,68 +80,27 @@ int receive_image(int socket)
   printf("Reply sent\n");
   printf(" \n");
 
-  image = fopen("capture2.jpeg", "w");
-
-  if (image == NULL)
+  FILE *fp = fopen("provacopy.png", "wb");
+  tot = 0;
+  if (fp != NULL)
   {
-    printf("Error has occurred. Image file could not be opened\n");
-    return -1;
-  }
-
-  //Loop while we have not received the entire file yet
-
-  int need_exit = 0;
-  struct timeval timeout = {10, 0};
-
-  fd_set fds;
-  int buffer_fd, buffer_out;
-
-  while (recv_size < size)
-  {
-    //while(packet_index < 2){
-
-    FD_ZERO(&fds);
-    FD_SET(socket, &fds);
-
-    buffer_fd = select(FD_SETSIZE, &fds, NULL, NULL, &timeout);
-
-    if (buffer_fd < 0)
-      printf("error: bad file descriptor set.\n");
-
-    if (buffer_fd == 0)
-      printf("error: buffer read timeout expired.\n");
-
-    if (buffer_fd > 0)
+    while ((b = recv(socket, buff, 1024, 0)) > 0)
     {
-      do
-      {
-        read_size = read(socket, imagearray, 10241);
-      } while (read_size < 0);
-
-      printf("Packet number received: %i\n", packet_index);
-      printf("Packet size: %i\n", read_size);
-
-      //Write the currently read data into our image file
-      write_size = fwrite(imagearray, 1, read_size, image);
-      printf("Written image size: %i\n", write_size);
-
-      if (read_size != write_size)
-      {
-        printf("error in read write\n");
-      }
-
-      //Increment the total number of bytes read
-      recv_size += read_size;
-      packet_index++;
-      printf("Total received image size: %i\n", recv_size);
-      printf(" \n");
-      printf(" \n");
+      tot += b;
+      fwrite(buff, 1, b, fp);
     }
-  }
 
-  fclose(image);
-  printf("Image successfully Received!\n");
-  return 1;
+    printf("Received byte: %d\n", tot);
+    if (b < 0)
+      perror("Receiving");
+
+    fclose(fp);
+  }
+  else
+  {
+    perror("File");
+  }
+  close(socket);
 }
 
 /*
@@ -271,6 +224,10 @@ int connection(int fd)
     {
       ptr = request + 4;
     }
+    if(strncmp(request, "POST ", 4) == 0)
+    {
+      receive_image(fd);
+    }
     if (ptr == NULL)
     {
       printf("Unknown Request ! \n");
@@ -348,7 +305,7 @@ int connection(int fd)
           send_new(fd, "<body><p>415 Unsupported Media Type!</p></body></html>");
         }
       }
-
+      printf(&fd1);
       close(fd);
     }
   }
