@@ -46,26 +46,24 @@ void error(const char *msg)
 /*
   Function that applies the histogram equalization to the received image
 */
-MagickWandGenesis();
+int applyHistoEq()
+{     
+      printf("entradndo al histo");
+      MagickWandGenesis();
       MagickWand *wand = NULL;
       wand = NewMagickWand();
-      MagickReadImage(wand,ifile);
+      MagickReadImage(wand,"coso1.jpg");
       MagickEqualizeImage(wand);
-      MagickQuantizeImage(
-                        wand,            // MagickWand
-                        number_colors,   // Target number colors
-                        RGBColorspace,  // Colorspace
-                        treedepth,       // Optimal depth
-                        MagickTrue,      // Dither
-                        MagickFalse      // Quantization error
-                    );
       MagickWriteImage(wand,"out.jpeg");
       if(wand)wand = DestroyMagickWand(wand);
       MagickWandTerminus();
+      printf("termino");
+      return(0);
+}
 /*
 Function to recieve an image
 */
-int receive_image(int socket)
+int receive_image(int socket, int opCode)
 {
   int fd = 0, confd = 0, b, tot;
   struct sockaddr_in serv_addr;
@@ -98,7 +96,7 @@ int receive_image(int socket)
 
   printf("Reply sent\n");
   printf(" \n");
-
+  
   FILE *fp = fopen("provacopy.png", "wb");
   tot = 0;
   char *httpresponse;
@@ -106,7 +104,7 @@ int receive_image(int socket)
   {
     while ((b = recv(socket, buff, 1024, 0)) > 0)
     { 
-      httpresponse = strstr(b,"\r\n\r\n");
+      httpresponse = strstr(buff,"\r\n\r\n");
       if(httpresponse)
       {
         httpresponse +=4;
@@ -125,6 +123,16 @@ int receive_image(int socket)
   {
     perror("File");
   }
+  int lastResult;
+  if(opCode == 1)
+  {
+    applyHistoEq();
+  }
+  else
+  {
+    printf("orginize pics by color");
+  }
+  
   printf("Done receiving the file\n");
   close(socket);
 }
@@ -250,13 +258,14 @@ int connection(int fd)
     {
       ptr = request + 4;
     }
-    if(strncmp(request, "POST ", 4) == 0)
+    if(strncmp(request, "POST /equalize", 14) == 0)
     {
-      receive_image(fd);
+      receive_image(fd,1);
     }
+    if(strncmp(request, "POST /categorize", 16) == 0)
     if (ptr == NULL)
     {
-      printf("Unknown Request ! \n");
+      receive_image(fd,2);
     }
     else
     {
