@@ -1,0 +1,10 @@
+daemon:  daemon.c
+		gcc -o server server.c `pkg-config --cflags --libs MagickWand`
+
+clean:
+		rm -f  $(OUT)/$(APP)*
+		rm -f *.o 
+		rm -f *.so
+		rm -f *.a
+
+.PHONY:clean all

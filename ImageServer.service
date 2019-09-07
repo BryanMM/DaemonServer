@@ -1,0 +1,10 @@
+[Unit]
+Description=Filtrador y clasificador de imágenes como servicio
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/daemon -c /etc/ImageServer/ImageServer.conf
+User=root
+ExecReload=/bin/kill -HUP $MAINPID
+[Install]
+WantedBy=multi-user.target
